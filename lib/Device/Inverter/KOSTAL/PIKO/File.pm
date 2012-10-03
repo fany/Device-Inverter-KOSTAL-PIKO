@@ -59,10 +59,10 @@ sub BUILD {
                     my ( $line, %c ) =
                       $self->getline_expect(
                         qr/^Wechselrichter Nr:\s+(?<nr>\d+)$/);
-                    unless ( defined( my $nr = $self->inverter->number ) ) {
+                    unless ( $self->inverter->has_number ) {
                         $self->inverter->number( $c{nr} );
                     }
-                    elsif ( $nr != $c{nr} ) {
+                    elsif ( ( my $nr = $self->inverter->number ) != $c{nr} ) {
                         carp(
                             $self->errmsg(
                                 "Conflicting inverter numbers: $nr vs. $c{nr}")
@@ -72,14 +72,14 @@ sub BUILD {
                 {    # Name:	piko
                     my ( $line, %c ) =
                       $self->getline_expect(qr/^Name:\s+(?<name>.*?)\s*$/);
-                    unless ( defined( my $nr = $self->inverter->name ) ) {
+                    unless ( $self->inverter->has_name ) {
                         $self->inverter->name( $c{name} );
                     }
-                    elsif ( $nr != $c{name} ) {
+                    elsif ( ( my $name = $self->inverter->name ) != $c{name} ) {
                         carp(
                             $self->errmsg(
                                     'Conflicting inverter names: '
-                                  . qq("$nr" vs. "$c{nr}")
+                                  . qq("$name" vs. "$c{name}")
                             )
                         );
                     }
