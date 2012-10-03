@@ -20,19 +20,15 @@ sub progress($) { print $tty shift if defined $tty }
 
 my $new_data;
 Fetch: {
-    for (
-        my $remaining_attempts = $max_attempts ;
-        $remaining_attempts-- ;
-      )
-    {
+    for ( my $remaining_attempts = $max_attempts ; $remaining_attempts-- ; ) {
         $new_data = $piko->fetch_logdata( progress_to => $tty );
-        last Fetch if @{ $new_data->logdata } > 1;
+        last Fetch if $new_data->logdata_records > 1;
     }
     die "Giving up after $max_attempts attempt"
       . ( $max_attempts != 1 && 's' ) . ".\n";
 }
 progress( 'Fetched '
-      . @{ $new_data->logdata }
+      . $new_data->logdata_records
       . ' records from '
       . $piko->name
       . ".\n" );
