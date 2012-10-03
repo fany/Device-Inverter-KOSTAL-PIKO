@@ -7,10 +7,15 @@ use warnings;
 our $VERSION = '0.01';
 
 use Any::Moose;
+use Any::Moose '::Util::TypeConstraints';
 use Carp qw(carp confess croak);
 use Params::Validate qw(validate_pos);
 use Scalar::Util qw(openhandle);
+use URI;
 use namespace::clean -except => 'meta';
+
+class_type('URI');
+coerce URI => from Str => via { URI->new(shift) };
 
 has configfile => (
     is      => 'rw',
@@ -22,28 +27,69 @@ has configfile => (
     }
 );
 
-has name => (
-    is  => 'rw',
-    isa => 'Str',
-);
+# Define standard attributes which are read from ~/.pikorc if needed:
+for (
+    [ host => ( last_resort => sub { shift->name }, ), ],
+    [
+        logdata_url => (
+            coerce      => 1,
+            isa         => 'URI',
+            last_resort => sub {
+                my $self = shift;
+                defined( my $host = $self->host ) or return;
+                "http://$host/LogDaten.dat";
+            },
+        )
+    ],
+    ['name'],
+    ['number'],
+    [
+        password => (
+            last_resort => sub {
+                my $self = shift;
+                require Net::Netrc;
+                my $pvserver = Net::Netrc->lookup( $self->host ) or return;
+                $pvserver->password;
+            },
+        ),
+    ],
+    [ time_offset => ( isa => 'Int', ) ],
+    [
+        username => (
+            last_resort => sub {
+                'pvserver';
+            },
+        )
+    ]
+  )
+{
+    my ( $attr, %spec ) = @$_;
+    my $last_resort = delete $spec{last_resort};
+    my $has_attr    = "has_$attr";
 
-has number => (
-    is  => 'rw',
-    isa => 'Int',
-);
+    # Include defaults in spec:
+    %spec = (
+        is      => 'rw',
+        isa     => 'Str',
+        lazy    => 1,
+        default => sub {
+            my $self = shift;
+            $self->read_configfile;
+            return $self->$attr if $self->$has_attr;
+            if (   defined $last_resort
+                && defined( my $value = $last_resort->($self) ) )
+            {
+                $self->$attr($value);
+                return $value;
+            }
+            confess("$attr not set");
+        },
+        predicate => $has_attr,
+        %spec
+    );
 
-has time_offset => (
-    is      => 'rw',
-    isa     => 'Int',
-    lazy    => 1,
-    default => sub {
-        my $self = shift;
-        $self->read_configfile;
-        confess('time_offset not set') unless $self->has_time_offset;
-        $self->time_offset;
-    },
-    predicate => 'has_time_offset',
-);
+    has $attr => %spec;
+}
 
 sub configure {
     my ( $self, $config_subhash ) = @_;
@@ -51,6 +97,21 @@ sub configure {
         my $has_attr = "has_$attr";
         $self->$attr($data) unless $self->$has_attr;
     }
+}
+
+sub fetch_logdata {
+    my $self        = shift;
+    my $logdata_url = $self->logdata_url;
+    require Device::Inverter::KOSTAL::PIKO::UserAgent;
+    my $response = (
+        my $ua = Device::Inverter::KOSTAL::PIKO::UserAgent->new(
+            username => $self->username,
+            password => $self->password,
+        )
+    )->get($logdata_url);
+    croak( "Could not fetch <$logdata_url>: " . $response->status_line )
+      unless $response->is_success;
+    $self->load( \$response->decoded_content );
 }
 
 sub load {
@@ -77,8 +138,9 @@ sub read_configfile {
     require Config::INI::Reader;
     my $config_hash = Config::INI::Reader->read_file($configfile);
 
-    if ( defined( my $number = $self->number ) ) {
-        if ( defined( my $specific_config = $config_hash->{$number} ) ) {
+    if ( $self->has_number ) {
+        if ( defined( my $specific_config = $config_hash->{ $self->number } ) )
+        {
             $self->configure($specific_config);
         }
     }

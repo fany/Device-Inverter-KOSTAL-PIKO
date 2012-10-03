@@ -1,0 +1,28 @@
+#!/usr/local/bin/perl -w
+
+use 5.01;
+use strict;
+use utf8;
+use warnings;
+
+use Device::Inverter::KOSTAL::PIKO;
+use Getopt::Long qw(GetOptions);
+
+GetOptions( \my %piko_opt, qw(host=s name=s number=i) ) or exit 1;
+
+my $piko = Device::Inverter::KOSTAL::PIKO->new(%piko_opt);
+
+{
+    my $tty;
+    if   ( open $tty, '>', '/dev/tty' ) { $tty->autoflush }
+    else                                { undef $tty }
+    sub progress($) { print $tty shift if defined $tty }
+}
+
+my $logdata;
+{
+    progress('.');
+    my $logdata = $piko->fetch_logdata;
+    redo if @$logdata == 1;
+}
+progress( ' Fetched ' . @$logdata . ' records from ' . $piko->name . ".\n" );
