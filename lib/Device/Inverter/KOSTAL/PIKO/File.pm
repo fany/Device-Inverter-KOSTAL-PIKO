@@ -13,6 +13,8 @@ use Device::Inverter::KOSTAL::PIKO::LogdataRecord;
 use Device::Inverter::KOSTAL::PIKO::Timestamp;
 use namespace::clean -except => 'meta';
 
+my $RE_zeit = qr/^(?<prefix>akt\. Zeit:\s+)(?<zeit>\d+)(?<suffix>)$/;
+
 has columns => (
     is  => 'rw',
     isa => 'ArrayRef[Str]',
@@ -29,6 +31,17 @@ has filename => (
     isa => 'Str',
 );
 
+has header => (
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    traits  => ['Array'],
+    handles => {
+        add_header   => 'push',
+        header_lines => 'elements',
+    },
+);
+
 has inverter => (
     is       => 'ro',
     isa      => 'Device::Inverter::KOSTAL::PIKO',
@@ -40,17 +53,10 @@ has logdata => (
     isa     => 'ArrayRef[Device::Inverter::KOSTAL::PIKO::LogdataRecord]',
     default => sub { [] },
     traits  => ['Array'],
-    handles => { logdata_records => 'count', },
-);
-
-has raw_data => (
-    is      => 'rw',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    traits  => ['Array'],
     handles => {
-        lines         => 'elements',
-        push_raw_data => 'push',
+        append_logdata  => 'push',
+        insert_logdata  => 'insert',
+        logdata_records => 'elements',
     },
 );
 
@@ -70,8 +76,9 @@ sub BUILD {
             # Wechselricher Logdaten
             when (/^Wechselrich?er Logdaten$/) {    # parse file header
                 {                                   # Wechselrichter Nr:	255
+                    $self->add_header($line);
                     my ( $line, %c ) =
-                      $self->getline_expect(
+                      $self->get_header_line(
                         qr/^Wechselrichter Nr:\s+(?<nr>\d+)$/);
                     unless ( $self->inverter->has_number ) {
                         $self->inverter->number( $c{nr} );
@@ -79,13 +86,14 @@ sub BUILD {
                     elsif ( ( my $nr = $self->inverter->number ) != $c{nr} ) {
                         carp(
                             $self->errmsg(
-                                "Conflicting inverter numbers: $nr vs. $c{nr}")
+                                "Conflicting inverter numbers: $nr vs. $c{nr}"
+                            )
                         );
                     }
                 }
                 {    # Name:	piko
                     my ( $line, %c ) =
-                      $self->getline_expect(qr/^Name:\s+(?<name>.*?)\s*$/);
+                      $self->get_header_line(qr/^Name:\s+(?<name>.*?)\s*$/);
                     unless ( $self->inverter->has_name ) {
                         $self->inverter->name( $c{name} );
                     }
@@ -99,15 +107,15 @@ sub BUILD {
                     }
                 }
                 {    # akt. Zeit:	  12345678
-                    my ( $line, %c ) =
-                      $self->getline_expect(qr/^akt\. Zeit:\s+(?<zeit>\d+)$/);
+                    my ( $line, %c ) = $self->get_header_line($RE_zeit);
                     $self->set_timestamp( $c{zeit} );
                 }
-                $self->getline_expect('');
+                $self->get_header_line(qr/^$/);
             }
 
    # Logdaten U[V], I[mA], P[W], E[kWh], F[Hz], R[kOhm], Ain T[digit], Zeit[sec]
             when (/^Logdaten (.*)$/) {
+                $self->add_header($line);
                 for ( split /, /, $1 ) {
                     /^([^\[]+)\[(\w+)\]$/
                       or $self->errmsg(qq(Unknown unit spec "$_"));
@@ -118,6 +126,7 @@ sub BUILD {
 
 # Zeit	DC1 U	DC1 I	DC1 P	DC1 T	DC1 S	DC2 U	DC2 I	DC2 P	DC2 T	DC2 S	DC3 U	DC3 I	DC3 P	DC3 T	DC3 S	AC1 U	AC1 I	AC1 P	AC1 T	AC2 U	AC2 I	AC2 P	AC2 T	AC3 U	AC3 I	AC3 P	AC3 T	AC F	FC I	Ain1	Ain2	Ain3	Ain4	AC S	Err	ENS S	ENS Err	KB S	total E	Iso R	Ereignis
             when (/^Zeit\t(?:(?:[\w ]+)\t)+$/) {
+                $self->add_header($line);
                 $self->columns( split /\t/ );
             }
 
@@ -143,6 +152,8 @@ sub BUILD {
     );
 }
 
+sub close { shift->fh->close }
+
 sub errmsg {
     my $self     = shift;
     my $message  = shift // 'Unexpected error';
@@ -153,28 +164,77 @@ sub errmsg {
 sub getline($) {
     my $self = shift;
     my $fh   = $self->fh;
-    my $line = <$fh>;
-    if ( defined $line ) {
-        $self->push_raw_data($line);
-        $line =~ s/\cM?\cJ\z//;
-    }
-    $line;
+    <$fh>;
 }
 
-sub getline_expect($) {
+sub get_header_line($) {
     my ( $self, $expectation ) = @_;
     defined( my $line = $self->getline )
       or confess( $self->errmsg('Unexpected EOF') );
-    confess( $self->errmsg(qq(Unexpected content: "$line")) )
-      if ref($expectation) ? $line !~ $expectation : $line ne $expectation;
+    $line =~ $expectation
+      or confess( $self->errmsg(qq(Unexpected content: "$line")) );
+    $self->add_header($line);
     if (wantarray) { $line, %+ }
     else           { $line }
+}
+
+sub merge {
+    my ( $self, $other ) = @_;
+
+    carp('Merging data from different inverters may lead to unexpected results')
+      if $self->inverter ne $other->inverter;
+    if ( ( my $other_timestamp = $other->timestamp )->epoch >
+        $self->timestamp->epoch )
+    {
+        $self->timestamp($other_timestamp);
+        $other_timestamp = $other_timestamp->epoch;
+        my $substitutions = 0;
+        $substitutions += s/$RE_zeit/$+{prefix}$other_timestamp$+{suffix}/
+          for $self->header_lines;
+        carp('Could not correct timestamp when merging')
+          unless $substitutions;
+    }
+
+    my @other_records = $other->logdata_records;
+    my $new_records = my $i = 0;
+    while ( $i <= $#{ $self->logdata } ) {
+        last unless @other_records;
+        for ( $self->logdata->[$i]->timestamp <=> $other_records[0]->timestamp )
+        {
+            when (0) {
+                if (
+                    (
+                        my $my_logdata =
+                        $self->logdata->[$i]->logdata_joined('')
+                    ) ne (
+                        my $other_logdata =
+                          $other_records[0]->logdata_joined('')
+                    )
+                  )
+                {
+                    croak(  'Different data for '
+                          . $self->logdata->[$i]->timestamp->datetime
+                          . ":\n$my_logdata----\n$other_logdata" );
+                }
+                shift @other_records;
+            }
+            when (-1) {
+                $self->insert_logdata( $i, shift @other_records );
+                ++$new_records;
+            }
+            when (1) { ++$i }
+            die;
+        }
+    }
+    $self->append_logdata(@other_records);
+    $new_records += @other_records;
 }
 
 sub print {
     my ( $self, $fh ) = @_;
     $fh //= \*STDOUT;
-    print $fh $self->lines;
+    print $fh $self->header_lines;
+    $_->print($fh) for $self->logdata_records;
 }
 
 sub set_timestamp {

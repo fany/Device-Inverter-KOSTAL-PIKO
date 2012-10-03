@@ -18,19 +18,29 @@ if   ( open $tty, '>', '/dev/tty' ) { $tty->autoflush }
 else                                { undef $tty }
 sub progress($) { print $tty shift if defined $tty }
 
-my $new_data;
+my $data;
 Fetch: {
     for ( my $remaining_attempts = $max_attempts ; $remaining_attempts-- ; ) {
-        $new_data = $piko->fetch_logdata( progress_to => $tty );
-        last Fetch if $new_data->logdata_records > 1;
+        $data = $piko->fetch_logdata( progress_to => $tty );
+        last Fetch if $data->logdata_records > 1;
     }
     die "Giving up after $max_attempts attempt"
       . ( $max_attempts != 1 && 's' ) . ".\n";
 }
 progress( 'Fetched '
-      . $new_data->logdata_records
+      . $data->logdata_records
       . ' records from '
       . $piko->name
       . ".\n" );
 
-$new_data->print;
+for (@ARGV) {
+    my $file = Device::Inverter::KOSTAL::PIKO->load($_);
+    progress( 'Read '
+          . $file->logdata_records
+          . ' records from '
+          . $file->filename
+          . "\n" );
+    $data->merge($file);
+}
+
+$data->print;

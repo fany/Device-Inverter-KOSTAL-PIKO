@@ -10,6 +10,7 @@ our $VERSION = '0.01';
 use Any::Moose;
 use Device::Inverter::KOSTAL::PIKO::Timestamp;
 use namespace::clean -except => 'meta';
+use overload '""' => sub { shift->logdata_joined('') };
 
 has inverter => (
     is       => 'ro',
@@ -21,12 +22,23 @@ has logdata => (
     is       => 'ro',
     isa      => 'ArrayRef[Str]',
     required => 1,
+    traits   => ['Array'],
+    handles  => {
+        logdata_joined => 'join',
+        logdata_lines  => 'elements',
+    }
 );
 
 has timestamp => (
     is  => 'rw',
     isa => 'Device::Inverter::KOSTAL::PIKO::Timestamp',
 );
+
+sub print {
+    my ( $self, $fh ) = @_;
+    $fh //= \*STDIN;
+    print $fh $self->logdata_lines;
+}
 
 __PACKAGE__->meta->make_immutable;
 no Any::Moose;

@@ -9,6 +9,10 @@ our $VERSION = '0.01';
 
 use Any::Moose;
 use namespace::clean -except => 'meta';
+use overload
+  '0+'     => sub { shift->epoch },
+  '""'     => sub { shift->datetime },
+  fallback => 1;
 
 has inverter => (
     is       => 'ro',

@@ -100,7 +100,7 @@ sub configure {
 }
 
 sub fetch_logdata {
-    my($self,%args) = @_;
+    my ( $self, %args ) = @_;
     my $logdata_url = $self->logdata_url;
     require HTTP::Request;
     require LWP::UserAgent;
@@ -109,7 +109,6 @@ sub fetch_logdata {
     my $ua = LWP::UserAgent->new;
     local *STDERR = \*STDERR;
     if ( $args{progress_to} ) {
-        # open my $save_stderr, '>&STDERR';
         open STDERR, '>&', $args{progress_to};
         $ua->show_progress(1);
     }
@@ -124,12 +123,15 @@ sub load {
     my ($source) = validate_pos( @_, 1 );
     my %param = ( inverter => $self );
     unless ( ref $source ) {    # String => filename
-        open $param{fh}, '<', $param{filename} = $source
+        open $param{fh}, '<:crlf', $param{filename} = $source
           or croak(qq(Cannot open file "$source" for reading: $!));
     }
-    elsif ( openhandle $_) { $param{fh} = $source }
+    elsif ( openhandle $source ) {
+        binmode( $source, ':crlf' );
+        $param{fh} = $source;
+    }
     else {
-        open $param{fh}, '<', $source
+        open $param{fh}, '<:crlf', $source
           or croak(qq(Cannot open reference for reading: $!));
     }
     require Device::Inverter::KOSTAL::PIKO::File;
