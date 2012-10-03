@@ -36,8 +36,22 @@ has inverter => (
 );
 
 has logdata => (
-    is  => 'rw',
-    isa => 'ArrayRef[Device::Inverter::KOSTAL::PIKO::LogdataRecord]',
+    is      => 'rw',
+    isa     => 'ArrayRef[Device::Inverter::KOSTAL::PIKO::LogdataRecord]',
+    default => sub { [] },
+    traits  => ['Array'],
+    handles => { logdata_records => 'count', },
+);
+
+has raw_data => (
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    traits  => ['Array'],
+    handles => {
+        lines         => 'elements',
+        push_raw_data => 'push',
+    },
 );
 
 has timestamp => (
@@ -140,7 +154,10 @@ sub getline($) {
     my $self = shift;
     my $fh   = $self->fh;
     my $line = <$fh>;
-    $line =~ s/\cM?\cJ\z// if defined $line;
+    if ( defined $line ) {
+        $self->push_raw_data($line);
+        $line =~ s/\cM?\cJ\z//;
+    }
     $line;
 }
 
@@ -152,6 +169,12 @@ sub getline_expect($) {
       if ref($expectation) ? $line !~ $expectation : $line ne $expectation;
     if (wantarray) { $line, %+ }
     else           { $line }
+}
+
+sub print {
+    my ( $self, $fh ) = @_;
+    $fh //= \*STDOUT;
+    print $fh $self->lines;
 }
 
 sub set_timestamp {

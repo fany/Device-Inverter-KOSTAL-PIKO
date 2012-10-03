@@ -1,4 +1,6 @@
 Changes
+bin/piko_collect
+bin/piko_dump
 lib/Device/Inverter/KOSTAL/PIKO.pm
 lib/Device/Inverter/KOSTAL/PIKO/File.pm
 lib/Device/Inverter/KOSTAL/PIKO/LogdataRecord.pm

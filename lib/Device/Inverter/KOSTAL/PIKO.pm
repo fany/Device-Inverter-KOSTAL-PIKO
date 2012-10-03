@@ -100,15 +100,20 @@ sub configure {
 }
 
 sub fetch_logdata {
-    my $self        = shift;
+    my($self,%args) = @_;
     my $logdata_url = $self->logdata_url;
-    require Device::Inverter::KOSTAL::PIKO::UserAgent;
-    my $response = (
-        my $ua = Device::Inverter::KOSTAL::PIKO::UserAgent->new(
-            username => $self->username,
-            password => $self->password,
-        )
-    )->get($logdata_url);
+    require HTTP::Request;
+    require LWP::UserAgent;
+    ( my $request = HTTP::Request->new( GET => $logdata_url ) )
+      ->authorization_basic( $self->username, $self->password );
+    my $ua = LWP::UserAgent->new;
+    local *STDERR = \*STDERR;
+    if ( $args{progress_to} ) {
+        # open my $save_stderr, '>&STDERR';
+        open STDERR, '>&', $args{progress_to};
+        $ua->show_progress(1);
+    }
+    my $response = $ua->request($request);
     croak( "Could not fetch <$logdata_url>: " . $response->status_line )
       unless $response->is_success;
     $self->load( \$response->decoded_content );
