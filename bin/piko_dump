@@ -1,0 +1,15 @@
+#!/usr/local/bin/perl -w
+
+use 5.01;
+use strict;
+use utf8;
+use warnings;
+
+use Device::Inverter::KOSTAL::PIKO;
+
+my $piko = Device::Inverter::KOSTAL::PIKO->new;
+
+for (@ARGV) {
+    my $file = $piko->load($_);
+    say $_->timestamp->datetime for @{ $file->logdata };
+}
