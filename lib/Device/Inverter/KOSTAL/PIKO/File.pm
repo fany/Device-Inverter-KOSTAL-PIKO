@@ -89,7 +89,7 @@ sub BUILD {
                     unless ( $self->inverter->has_name ) {
                         $self->inverter->name( $c{name} );
                     }
-                    elsif ( ( my $name = $self->inverter->name ) != $c{name} ) {
+                    elsif ( ( my $name = $self->inverter->name ) ne $c{name} ) {
                         carp(
                             $self->errmsg(
                                     'Conflicting inverter names: '
