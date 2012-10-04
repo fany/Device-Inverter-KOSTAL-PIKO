@@ -200,7 +200,7 @@ sub merge {
           unless $substitutions;
     }
 
-    my @other_records = $other->logdata_records;
+    my @other_records = $other->logdata_records or return 0;
 
     my $i = 0;
     {    # perform binary search to locate position for first new element:
@@ -218,8 +218,10 @@ sub merge {
 
     my $new_records = 0;
     while ( $i <= $#{ $self->logdata } ) {
-        last unless @other_records;
-        for ( $self->logdata->[$i]->timestamp <=> $other_records[0]->timestamp )
+
+        # use ->epoch (not overloading) for better performance:
+        for ( $self->logdata->[$i]->timestamp->epoch <=> $other_records[0]
+            ->timestamp->epoch )
         {
             when (0) {
                 if (
@@ -237,6 +239,7 @@ sub merge {
                           . ":\n$my_logdata----\n$other_logdata" );
                 }
                 shift @other_records;
+                return $new_records unless @other_records;
             }
             when (1) {
 
@@ -244,6 +247,7 @@ sub merge {
                 # $self->insert_logdata( $i, shift @other_records );
                 splice @{ $self->logdata }, $i, 0, shift @other_records;
                 ++$new_records;
+                return $new_records unless @other_records;
             }
             when (-1) { ++$i }
             die;
