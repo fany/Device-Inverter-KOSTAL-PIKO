@@ -190,7 +190,7 @@ sub merge {
         $other_timestamp = $other_timestamp->epoch;
         my $substitutions = 0;
         $substitutions += s/$RE_zeit/$+{prefix}$other_timestamp$+{suffix}/
-          for $self->header_lines;
+          for @{ $self->header };    # $self->header_lines provides only a copy
         carp('Could not correct timestamp when merging')
           unless $substitutions;
     }
@@ -218,11 +218,14 @@ sub merge {
                 }
                 shift @other_records;
             }
-            when (-1) {
-                $self->insert_logdata( $i, shift @other_records );
+            when (1) {
+
+                # extremely slow:
+                # $self->insert_logdata( $i, shift @other_records );
+                splice @{ $self->logdata }, $i, 0, shift @other_records;
                 ++$new_records;
             }
-            when (1) { ++$i }
+            when (-1) { ++$i }
             die;
         }
     }
