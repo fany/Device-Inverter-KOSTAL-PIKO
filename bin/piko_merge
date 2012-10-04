@@ -25,12 +25,12 @@ my $piko = Device::Inverter::KOSTAL::PIKO->new;
 my $data;
 for (@ARGV) {
 
-    ( my $file = $piko->load($_) )->close;
+    ( my $file = $piko->load( $_ eq '-' ? \*STDIN : $_ ) )->close;
 
     progress( 'Read '
           . records( $file->logdata_records )
           . ' from '
-          . $file->filename );
+          . ( $_ eq '-' ? 'standard input' : qq(file "$_") ) );
 
     if ($data) {
         my $new_records = $data->merge($file);
