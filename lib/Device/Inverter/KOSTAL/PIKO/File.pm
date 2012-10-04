@@ -8,7 +8,7 @@ use warnings;
 our $VERSION = '0.01';
 
 use Any::Moose;
-use Carp qw(carp confess);
+use Carp qw(carp confess croak);
 use Device::Inverter::KOSTAL::PIKO::LogdataRecord;
 use Device::Inverter::KOSTAL::PIKO::Timestamp;
 use namespace::clean -except => 'meta';
@@ -69,7 +69,7 @@ sub BUILD {
     my $self = shift;
 
     # Parse file:
-    my %logdata;
+    my @logdata;
     while ( defined( my $line = $self->getline ) ) {
         for ($line) {
 
@@ -132,7 +132,16 @@ sub BUILD {
 
 #   40094373	   466	  1070	   483	49402	16393	   543	   520	   287	49421	49162	     0	    20	     0	49412	    3	   224	  1880	   409	49927	   223	  1100	   240	49911	   223	   230	    50	49892	50.0	    1	    0	    0	    0	    0	   28	    0	  3	    0
             when (/^(?=[ 0-9]{10}\t) *([1-9][0-9]*)\t/) {
-                push @{ $logdata{$1} }, $_
+                if ( !@logdata || $logdata[-1][0] < $1 ) {
+                    push @logdata, [ $1 => [$_] ];
+                }
+                elsif ( $logdata[-1][0] > $1 ) {
+                    croak(
+                        $self->errmsg(
+                            "Records disordered: $logdata[-1][0] > $1")
+                    );
+                }
+                else { push @{ $logdata[-1][1] }, $_ }
             }
         }
     }
@@ -141,13 +150,13 @@ sub BUILD {
         [
             map Device::Inverter::KOSTAL::PIKO::LogdataRecord->new(
                 inverter  => $self->inverter,
-                logdata   => $logdata{$_},
+                logdata   => $_->[1],
                 timestamp => Device::Inverter::KOSTAL::PIKO::Timestamp->new(
                     inverter => $self->inverter,
-                    epoch    => $_,
+                    epoch    => $_->[0],
                 ),
             ),
-            sort { $a <=> $b } keys %logdata
+            @logdata
         ]
     );
 }
