@@ -201,7 +201,22 @@ sub merge {
     }
 
     my @other_records = $other->logdata_records;
-    my $new_records = my $i = 0;
+
+    my $i = 0;
+    {    # perform binary search to locate position for first new element:
+        my $i_max            = $#{ $self->logdata } + 1;
+        my $target_timestamp = 0 + $other_records[0]->timestamp;
+        while ( $i < $i_max ) {
+            if ( $self->logdata->[ my $i_mid = ( $i + $i_max ) >> 1 ]
+                ->timestamp < $target_timestamp )
+            {
+                $i = $i_mid + 1;
+            }
+            else { $i_max = $i }
+        }
+    }
+
+    my $new_records = 0;
     while ( $i <= $#{ $self->logdata } ) {
         last unless @other_records;
         for ( $self->logdata->[$i]->timestamp <=> $other_records[0]->timestamp )
