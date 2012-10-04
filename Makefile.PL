@@ -7,7 +7,8 @@ WriteMakefile(
     NAME          => 'Device::Inverter::KOSTAL::PIKO',
     AUTHOR        => q{Martin H. Sluka <fany@cpan.org>},
     VERSION_FROM  => 'lib/Device/Inverter/KOSTAL/PIKO.pm',
-    ABSTRACT_FROM => 'lib/Device/Inverter/KOSTAL/PIKO.pm',
+    # ABSTRACT_FROM => 'lib/Device/Inverter/KOSTAL/PIKO.pm',
+    EXE_FILES     => [ map "bin/piko_$_", qw/collect dump merge/ ],
     ( $ExtUtils::MakeMaker::VERSION >= 6.3002
         ? ( 'LICENSE' => 'perl' )
         : () ),
@@ -20,7 +21,9 @@ WriteMakefile(
         'File::HomeDir'       => 0,
         'File::Spec'          => 0,
         'Getopt::Long'        => 0,
+        'HTTP::Request'       => 0,
         'LWP::UserAgent'      => 0,
+        'MouseX-NativeTraits' => 0, # or alternatively Moose
         'namespace::clean'    => 0,
         'Net::Netrc'          => 0,
         'Params::Validate'    => 0,
