@@ -146,19 +146,15 @@ sub BUILD {
         }
     }
 
-    $self->logdata(
-        [
-            map Device::Inverter::KOSTAL::PIKO::LogdataRecord->new(
-                inverter  => $self->inverter,
-                logdata   => $_->[1],
-                timestamp => Device::Inverter::KOSTAL::PIKO::Timestamp->new(
-                    inverter => $self->inverter,
-                    epoch    => $_->[0],
-                ),
-            ),
-            @logdata
-        ]
-    );
+    $_ = Device::Inverter::KOSTAL::PIKO::LogdataRecord->new(
+        inverter  => $self->inverter,
+        logdata   => $_->[1],
+        timestamp => Device::Inverter::KOSTAL::PIKO::Timestamp->new(
+            inverter => $self->inverter,
+            epoch    => $_->[0],
+        ),
+    ) for @logdata;    # faster than map
+    $self->logdata( \@logdata );
 }
 
 sub close { shift->fh->close }
