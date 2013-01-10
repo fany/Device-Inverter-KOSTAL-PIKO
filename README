@@ -1,15 +1,21 @@
 Device-Inverter-KOSTAL-PIKO
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+The modules and scripts of this distribution are designed to
+gather and process log data of KOSTAL PIKO inverters
+(http://www.kostal-solar-electric.com/content/en/?am=58&as=66&ass=72&al=en&mp=72&kat=6),
+that is, devices which are typically needed as part of a solar
+power plant.
 
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
+I wrote this to collect the log data from my PIKO 8.3.  Since I
+had no other devices to test at hand, it might well be that the
+code will currently not work for other devices, especially ones
+with different language settings.  (Mine delivers its log data
+with German headlines.)
+
+If you own a similar device and are interested in using this
+distribution, please let me know!
+
+	 -- Martin H. Sluka <fany@cpan.org>
 
 
 INSTALLATION
