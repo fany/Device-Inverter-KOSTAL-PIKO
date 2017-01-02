@@ -14,7 +14,7 @@ WriteMakefile(
         : () ),
     PL_FILES  => {},
     PREREQ_PM => {
-        'Any::Moose'           => 0,
+        'Mouse'                => 0,
         'Carp'                 => 0,
         'Config::INI::Reader'  => 0,
         'DateTime'             => 0,

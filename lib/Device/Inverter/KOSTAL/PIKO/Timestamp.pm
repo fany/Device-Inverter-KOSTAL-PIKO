@@ -5,9 +5,9 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
-use Any::Moose;
+use Mouse;
 use namespace::clean -except => 'meta';
 use overload
   '0+'     => sub { shift->epoch },
@@ -38,6 +38,6 @@ has datetime => (
 );
 
 __PACKAGE__->meta->make_immutable;
-no Any::Moose;
+no Mouse;
 
 1;

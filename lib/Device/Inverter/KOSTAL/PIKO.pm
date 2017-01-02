@@ -4,10 +4,10 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
-use Any::Moose;
-use Any::Moose '::Util::TypeConstraints';
+use Mouse;
+use Mouse::Util::TypeConstraints;
 use Carp qw(carp confess croak);
 use Params::Validate qw(validate_pos);
 use Scalar::Util qw(openhandle);
@@ -157,7 +157,7 @@ sub read_configfile {
 }
 
 __PACKAGE__->meta->make_immutable;
-no Any::Moose;
+no Mouse;
 
 1;
 

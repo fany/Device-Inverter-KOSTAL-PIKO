@@ -5,9 +5,9 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
-use Any::Moose;
+use Mouse;
 use Device::Inverter::KOSTAL::PIKO::Timestamp;
 use namespace::clean -except => 'meta';
 use overload '""' => sub { shift->logdata_joined('') };
@@ -41,6 +41,6 @@ sub print {
 }
 
 __PACKAGE__->meta->make_immutable;
-no Any::Moose;
+no Mouse;
 
 1;

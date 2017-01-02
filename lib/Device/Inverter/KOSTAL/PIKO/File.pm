@@ -5,13 +5,16 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.03';
 
-use Any::Moose;
+use Mouse;
 use Carp qw(carp confess croak);
 use Device::Inverter::KOSTAL::PIKO::LogdataRecord;
 use Device::Inverter::KOSTAL::PIKO::Timestamp;
 use namespace::clean -except => 'meta';
+
+# not before „use Mouse“, which implicitely turns warnings on:
+no warnings 'experimental::smartmatch';
 
 my $RE_zeit = qr/^(?<prefix>akt\. Zeit:\s+)(?<zeit>\d+)(?<suffix>)$/;
 
@@ -275,6 +278,6 @@ sub set_timestamp {
 }
 
 __PACKAGE__->meta->make_immutable;
-no Any::Moose;
+no Mouse;
 
 1;
