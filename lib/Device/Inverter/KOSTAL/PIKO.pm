@@ -4,7 +4,7 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Mouse;
 use Mouse::Util::TypeConstraints;
@@ -164,7 +164,7 @@ no Mouse;
 __END__
 =head1 NAME
 
-Device::Inverter::KOSTAL::PIKO - class which represents a KOSTAL PIKO DC/AC converter
+Device::Inverter::KOSTAL::PIKO - represents a KOSTAL PIKO DC/AC converter
 
 =head1 VERSION
 
