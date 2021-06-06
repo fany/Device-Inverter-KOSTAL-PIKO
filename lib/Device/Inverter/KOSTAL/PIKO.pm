@@ -162,6 +162,9 @@ no Mouse;
 1;
 
 __END__
+
+=encoding UTF-8
+
 =head1 NAME
 
 Device::Inverter::KOSTAL::PIKO - represents a KOSTAL PIKO DC/AC converter
@@ -174,14 +177,23 @@ Device::Inverter::KOSTAL::PIKO - represents a KOSTAL PIKO DC/AC converter
     my $file = $piko->load($filename_or_handle_or_ref_to_data);
     say $_->timestamp for $file->logdata;
 
+=head1 SAMPLE ~/.pikorc
+
+    [255]
+    host = piko
+    time_offset = 1309160816
+
 =head1 AUTHOR
 
 Martin Sluka, C<< <fany at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-device-inverter-kostal-piko at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Device-Inverter-KOSTAL-PIKO>.  I will be notified, and then you'll
+Please report any bugs or feature requests at
+L<https://github.com/fany/Device-Inverter-KOSTAL-PIKO/issues>.
+L<Pull requests|https://github.com/fany/Device-Inverter-KOSTAL-PIKO/pulls>
+are also welcome.
+I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
@@ -196,28 +208,24 @@ You can also look for information at:
 
 =item * RT: CPAN's request tracker (report bugs here)
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Device-Inverter-KOSTAL-PIKO>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Device-Inverter-KOSTAL-PIKO>
+L<https://rt.cpan.org/NoAuth/Bugs.html?Dist=Device-Inverter-KOSTAL-PIKO>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Device-Inverter-KOSTAL-PIKO>
+L<https://cpanratings.perl.org/d/Device-Inverter-KOSTAL-PIKO>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Device-Inverter-KOSTAL-PIKO/>
+L<https://metacpan.org/release/Device-Inverter-KOSTAL-PIKO>
 
 =back
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Martin Sluka.
+Copyright 2012–2021 Martin Sluka.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
 by the Free Software Foundation; or the Artistic License.
 
-See http://dev.perl.org/licenses/ for more information.
+See https://dev.perl.org/licenses/ for more information.
