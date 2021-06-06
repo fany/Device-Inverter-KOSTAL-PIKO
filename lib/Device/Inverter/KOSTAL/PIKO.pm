@@ -4,7 +4,7 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Mouse;
 use Mouse::Util::TypeConstraints;
@@ -166,12 +166,6 @@ __END__
 
 Device::Inverter::KOSTAL::PIKO - represents a KOSTAL PIKO DC/AC converter
 
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
 =head1 SYNOPSIS
 
     use Device::Inverter::KOSTAL::PIKO;
@@ -180,16 +174,9 @@ Version 0.01
     my $file = $piko->load($filename_or_handle_or_ref_to_data);
     say $_->timestamp for $file->logdata;
 
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 SUBROUTINES/METHODS
-
 =head1 AUTHOR
 
-Martin H. Sluka, C<< <fany at cpan.org> >>
+Martin Sluka, C<< <fany at cpan.org> >>
 
 =head1 BUGS
 
@@ -197,15 +184,11 @@ Please report any bugs or feature requests to C<bug-device-inverter-kostal-piko 
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Device-Inverter-KOSTAL-PIKO>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
-
-
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
     perldoc Device::Inverter::KOSTAL::PIKO
-
 
 You can also look for information at:
 
@@ -229,13 +212,9 @@ L<http://search.cpan.org/dist/Device-Inverter-KOSTAL-PIKO/>
 
 =back
 
-
-=head1 ACKNOWLEDGEMENTS
-
-
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Martin H. Sluka.
+Copyright 2012 Martin Sluka.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

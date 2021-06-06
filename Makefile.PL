@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME          => 'Device::Inverter::KOSTAL::PIKO',
-    AUTHOR        => q{Martin H. Sluka <fany@cpan.org>},
+    AUTHOR        => q{Martin Sluka <perl@sluka.de>},
     VERSION_FROM  => 'lib/Device/Inverter/KOSTAL/PIKO.pm',
     # ABSTRACT_FROM => 'lib/Device/Inverter/KOSTAL/PIKO.pm',
     EXE_FILES     => [ map "bin/piko_$_", qw/collect dump merge/ ],
@@ -33,4 +33,11 @@ WriteMakefile(
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'Device-Inverter-KOSTAL-PIKO-*' },
+
+    META_MERGE => {
+        resources => {
+            homepage   => 'https://github.com/fany/Device-Inverter-KOSTAL-PIKO',
+            repository => 'https://github.com/fany/Device-Inverter-KOSTAL-PIKO.git',
+        },
+    },
 );
