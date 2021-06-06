@@ -4,7 +4,7 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.04';
+our $VERSION = '0.1';
 
 use Mouse;
 use Mouse::Util::TypeConstraints;
@@ -29,19 +29,36 @@ has configfile => (
 
 # Define standard attributes which are read from ~/.pikorc if needed:
 for (
-    [ host => ( last_resort => sub { shift->name }, ), ],
+    [
+        host => (
+            last_resort => sub {
+                'piko';
+            },
+        ),
+    ],
+    [
+        status_url => (
+            coerce      => 1,
+            isa         => 'URI',
+            last_resort => sub {
+                my $self = shift;
+                defined( my $host = $self->host ) or return;
+                "http://$host/";
+            },
+        )
+    ],
     [
         logdata_url => (
             coerce      => 1,
             isa         => 'URI',
             last_resort => sub {
                 my $self = shift;
-                defined( my $host = $self->host ) or return;
-                "http://$host/LogDaten.dat";
+                defined( my $status_url = $self->status_url ) or return;
+                ( my $logdata_url = $status_url->clone )->path('/LogDaten.dat');
+                $logdata_url;
             },
         )
     ],
-    ['name'],
     ['number'],
     [
         password => (
@@ -100,11 +117,16 @@ sub configure {
 }
 
 sub fetch_logdata {
-    my ( $self, %args ) = @_;
-    my $logdata_url = $self->logdata_url;
+    my $self = shift;
+    $self->load( \$self->get( logdata_url => @_ ) );
+}
+
+sub get {
+    my ( $self, $what, %args ) = @_;
+    my $url = $self->$what;
     require HTTP::Request;
     require LWP::UserAgent;
-    ( my $request = HTTP::Request->new( GET => $logdata_url ) )
+    ( my $request = HTTP::Request->new( GET => $url ) )
       ->authorization_basic( $self->username, $self->password );
     my $ua = LWP::UserAgent->new;
     local *STDERR = \*STDERR;
@@ -113,15 +135,22 @@ sub fetch_logdata {
         $ua->show_progress(1);
     }
     my $response = $ua->request($request);
-    croak( "Could not fetch <$logdata_url>: " . $response->status_line )
+    croak( "Could not fetch <$url>: " . $response->status_line )
       unless $response->is_success;
-    $self->load( \$response->decoded_content );
+    $response->decoded_content;
+}
+
+sub get_current_status {
+    my $self = shift;
+    require Device::Inverter::KOSTAL::PIKO::Status;
+    Device::Inverter::KOSTAL::PIKO::Status->new(
+        $self->get( status_url => @_ ) );
 }
 
 sub load {
-    my $self = shift;
+    my $self     = shift;
     my ($source) = validate_pos( @_, 1 );
-    my %param = ( inverter => $self );
+    my %param    = ( inverter => $self );
     unless ( ref $source ) {    # String => filename
         open $param{fh}, '<:crlf', $param{filename} = $source
           or croak(qq(Cannot open file "$source" for reading: $!));
@@ -182,6 +211,23 @@ Device::Inverter::KOSTAL::PIKO - represents a KOSTAL PIKO DC/AC converter
     [255]
     host = piko
     time_offset = 1309160816
+
+=head1 METHODS
+
+=head1 host
+
+=head1 logdata_url
+
+=head1 status_url
+
+=head1 fetch_logdata
+
+=head1 get_current_status
+
+Fetch current device status and return it as
+L<Device::Inverter::KOSTAL::PIKO::Status> object.
+
+=head1 read_configfile
 
 =head1 AUTHOR
 
