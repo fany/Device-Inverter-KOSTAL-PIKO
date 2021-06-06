@@ -7,13 +7,38 @@ package Device::Inverter::KOSTAL::PIKO::Status;
 our $VERSION = '0.01';
 
 use Mouse;
+use Mouse::Util::TypeConstraints;
 use namespace::clean -except => 'meta';
+
+sub _declare_attr {
+    my ( $name, $type ) = @_;
+    has $_, coerce => 1, is => 'ro', required => 1, isa => $type;
+}
+
+for (qw(Int Num)) {
+    subtype "Maybe_$_" => as "Maybe[$_]";
+    coerce "Maybe_$_"  => from Str => via {
+        if   ( $_ eq 'x x x&nbsp' ) { undef }
+        else                        { $_ }
+    };
+}
+
+_declare_attr $_, 'Str' for qw(html status);
+_declare_attr $_, 'Maybe_Int'
+  for qw(ac_power_current total_energy),
+  map( ( "power_l$_", "voltage_l$_" ), 1 .. 3 ),
+  map "voltage_string_$_", 1, 2;
+_declare_attr $_, 'Maybe_Num'
+  for qw(ac_power_current daily_energy),
+  map "current_string_$_", 1, 2;
 
 around BUILDARGS => sub {
     my $orig  = shift;
     my $class = shift;
     my %args  = @_ == 1 && !ref $_[0] ? ( html => @_ ) : @_;
     ( my $html = $args{html} ) =~ y/\cM//d;
+    state $RE_Int = qr/\d+|x x x&nbsp/;
+    state $RE_Num = qr/\d+\.\d\d|x x x&nbsp/;
     $html =~ m{
 <table cellspacing="0" cellpadding="0" width="770">
 <tr><td></td></tr>
@@ -31,12 +56,12 @@ around BUILDARGS => sub {
 <td width="100">
   (?:aktuell|current)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<ac_power_current>\d+)</td>
+  (?<ac_power_current>$RE_Int)</td>
 <td width="140">&nbsp W</td>
 <td width="100">
   (?:total energy|Gesamtenergie)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<total_energy>\d+)</td>
+  (?<total_energy>$RE_Int)</td>
 <td width="50">&nbsp kWh</td>
 <td>&nbsp</td></tr>
 <tr height="2"><td></td></tr>
@@ -50,7 +75,7 @@ around BUILDARGS => sub {
 <td width="100">
   (?:daily energy|Tagesenergie)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<daily_energy>\d+\.\d\d)</td>
+  (?<daily_energy>$RE_Num)</td>
 <td width="50">&nbsp kWh</td>
 <td>&nbsp</td></tr>
 <tr height="5"><td></td></tr>
@@ -94,12 +119,12 @@ around BUILDARGS => sub {
 <td width="100">
   (?:voltage|Spannung)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<voltage_string_1>\d+)</td>
+  (?<voltage_string_1>$RE_Int)</td>
 <td width="140">&nbsp V</td>
 <td width="100">
   (?:voltage|Spannung)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<voltage_l1>\d+)</td>
+  (?<voltage_l1>$RE_Int)</td>
 <td width="30">&nbsp V</td>
 <td>&nbsp</td></tr>
 <tr height="2"><td></td></tr>
@@ -108,12 +133,12 @@ around BUILDARGS => sub {
 <td width="100">
   (?:current|Strom)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<current_string_1>\d+\.\d\d)</td>
+  (?<current_string_1>$RE_Num)</td>
 <td width="140">&nbsp A</td>
 <td width="100">
   (?:power|Leistung)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<power_l1>\d+)</td>
+  (?<power_l1>$RE_Int)</td>
 <td width="30">&nbsp W</td>
 <td>&nbsp</td></tr>
 <tr height="22"><td></td></tr>
@@ -133,12 +158,12 @@ around BUILDARGS => sub {
 <td width="100">
   (?:voltage|Spannung)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<voltage_string_2>\d+)</td>
+  (?<voltage_string_2>$RE_Int)</td>
 <td width="140">&nbsp V</td>
 <td width="100">
   (?:voltage|Spannung)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<voltage_l2>\d+)</td>
+  (?<voltage_l2>$RE_Int)</td>
 <td width="30">&nbsp V</td>
 <td>&nbsp</td></tr>
 <tr height="2"><td></td></tr>
@@ -147,12 +172,12 @@ around BUILDARGS => sub {
 <td width="100">
   (?:current|Strom)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<current_string_2>\d+\.\d\d)</td>
+  (?<current_string_2>$RE_Num)</td>
 <td width="140">&nbsp A</td>
 <td width="100">
   (?:power|Leistung)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<power_l2>\d+)</td>
+  (?<power_l2>$RE_Int)</td>
 <td width="30">&nbsp W</td>
 <td>&nbsp</td></tr>
 <tr height="22"><td></td></tr>
@@ -178,7 +203,7 @@ around BUILDARGS => sub {
 <td width="95">
   (?:voltage|Spannung)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<voltage_l3>\d+)</td>
+  (?<voltage_l3>$RE_Int)</td>
 <td width="30">&nbsp V</td>
 <td>&nbsp</td></tr>
 <tr height="2"><td></td></tr>
@@ -193,7 +218,7 @@ around BUILDARGS => sub {
 <td width="95">
   (?:power|Leistung)</td>
 <td width="70" align="right" bgcolor="#FFFFFF">
-  (?<power_l3>\d+)</td>
+  (?<power_l3>$RE_Int)</td>
 <td width="30">&nbsp W</td>
 <td>&nbsp</td></tr>
 
@@ -209,21 +234,6 @@ around BUILDARGS => sub {
     %args = ( %+, %args );
     $class->$orig(%args);
 };
-
-use constant COMMON => ( is => 'ro', required => 1 );
-
-has $_ => COMMON,
-  isa  => 'Str'
-  for qw(html status);
-has $_ => COMMON,
-  isa  => 'Int'
-  for qw(ac_power_current total_energy),
-  map( ( "power_l$_", "voltage_l$_" ), 1 .. 3 ),
-  map "voltage_string_$_", 1, 2;
-has $_ => COMMON,
-  isa  => 'Num'
-  for qw(ac_power_current daily_energy),
-  map "current_string_$_", 1, 2;
 
 __PACKAGE__->meta->make_immutable;
 no Mouse;
