@@ -2,6 +2,8 @@ bin/piko_collect
 bin/piko_dump
 bin/piko_merge
 Changes
+Device-Inverter-KOSTAL-PIKO-0.1.tar.gz
+Device-Inverter-KOSTAL-PIKO-0.11.tar.gz
 examples/piko_save_logdata
 lib/Device/Inverter/KOSTAL/PIKO.pm
 lib/Device/Inverter/KOSTAL/PIKO/File.pm
@@ -15,6 +17,7 @@ t/00-load.t
 t/boilerplate.t
 t/manifest.t
 t/pod.t
+t/status-de-0.t
 t/status-de-off.t
 t/status-de.t
 t/status-en.t

@@ -38,7 +38,7 @@ around BUILDARGS => sub {
     my %args  = @_ == 1 && !ref $_[0] ? ( html => @_ ) : @_;
     ( my $html = $args{html} ) =~ y/\cM//d;
     state $RE_Int = qr/\d+|x x x&nbsp/;
-    state $RE_Num = qr/\d+\.\d\d|x x x&nbsp/;
+    state $RE_Num = qr/0|\d+\.\d\d|x x x&nbsp/;
     $html =~ m{
 <table cellspacing="0" cellpadding="0" width="770">
 <tr><td></td></tr>

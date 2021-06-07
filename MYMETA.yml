@@ -37,5 +37,5 @@ requires:
 resources:
   homepage: https://github.com/fany/Device-Inverter-KOSTAL-PIKO
   repository: https://github.com/fany/Device-Inverter-KOSTAL-PIKO.git
-version: '0.1'
+version: 0.12
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

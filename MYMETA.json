@@ -58,6 +58,6 @@
          "url" : "https://github.com/fany/Device-Inverter-KOSTAL-PIKO.git"
       }
    },
-   "version" : "0.1",
+   "version" : 0.12,
    "x_serialization_backend" : "JSON::PP version 4.06"
 }
